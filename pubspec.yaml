@@ -24,3 +24,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    # Logo Deutsche Gebärdensprache, kostenfrei nutzbar
+    # (Bundesfachstelle Barrierefreiheit, Logos für Barrierefreiheit)
+    - assets/images/dgs.png

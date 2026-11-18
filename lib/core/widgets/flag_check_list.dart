@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
-// Ein Eintrag der Liste: Wert, Name und Flaggen-Emoji.
+// Ein Eintrag der Liste: Wert, Name und Flaggen-Emoji. Für einige Codes
+// gibt es statt der Flagge ein Logo (siehe [logoFor]).
 typedef FlagItem = ({String value, String name, String flag});
+
+// Logo statt Flagge, z. B. das offizielle DGS-Logo.
+const _logos = {'dgs': 'assets/images/dgs.png'};
+
+String? logoFor(String value) => _logos[value];
 
 // Liste mit Flagge, Name und Häkchen in einem Rahmen. Gewählte Einträge
 // stehen oben (in der Reihenfolge von [selected]). Höchstens [maxRows]
@@ -73,9 +79,20 @@ class _FlagCheckListState extends State<FlagCheckList> {
                     value: selected.contains(item.value),
                     onChanged: (on) =>
                         widget.onChanged(item.value, on ?? false),
-                    secondary: Text(
-                      item.flag,
-                      style: const TextStyle(fontSize: 22),
+                    secondary: SizedBox(
+                      width: 40,
+                      child: logoFor(item.value) != null
+                          ? Image.asset(
+                              logoFor(item.value)!,
+                              height: 22,
+                              fit: BoxFit.contain,
+                              semanticLabel: item.name,
+                            )
+                          : Text(
+                              item.flag,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 22),
+                            ),
                     ),
                     title: Text(item.name, overflow: TextOverflow.ellipsis),
                     dense: true,
