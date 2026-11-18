@@ -182,25 +182,30 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
                 onChanged: changed,
               ),
               const SizedBox(height: 12),
-              PrimaryButton(
-                label: 'Speichern',
-                isLoading: _isLoading,
-                onPressed: _canSave ? _save : null,
-              ),
-              if (_existing != null) ...[
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.error,
+              // Löschen links, Speichern rechts (wie bei der Anfrage).
+              Row(
+                children: [
+                  if (_existing != null)
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
+                        ),
+                      ),
+                      onPressed: _isLoading ? null : _delete,
+                      icon: const Icon(Icons.delete_outline),
+                      label: const Text('Löschen'),
                     ),
-                    onPressed: _isLoading ? null : _delete,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Einsatzort löschen'),
+                  const Spacer(),
+                  PrimaryButton(
+                    label: 'Speichern',
+                    isLoading: _isLoading,
+                    onPressed: _canSave ? _save : null,
                   ),
-                ),
-              ],
+                ],
+              ),
               ErrorText(message: _errorMessage),
             ],
           ),
