@@ -11,7 +11,7 @@ import '../../core/widgets/success_screen.dart';
 
 enum _Step { details, password, code, success }
 
-// Registrierung als Auftragnehmer. Eine Rollenwahl (Dolmetscher:in,
+// Registrierung als Auftraggeber (Rolle CLIENT). Eine Rollenwahl (Dolmetscher:in,
 // Dienstleister/Agentur) gibt es nicht; die Rolle setzt das Backend.
 //
 //   Angaben  → POST /users/register/code  (prüft E-Mail, schickt Code)
