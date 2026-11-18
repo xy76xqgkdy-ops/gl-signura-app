@@ -6,7 +6,7 @@ import '../../core/utils/date_utils.dart';
 enum RequestStatus {
   newRequest('new', 'Offen', Colors.red),
   transferred('transferred', 'Weitergeleitet', Colors.blue),
-  confirmed('confirmed', 'Bestätigt', Colors.green),
+  confirmed('confirmed', 'Beauftragt', Colors.green),
   cancelled('cancelled', 'Abgesagt', Colors.grey);
 
   final String apiValue;
@@ -38,7 +38,8 @@ class RequestData {
   // Zugeteilter Dolmetscher; liefert das Backend noch nicht (dann null).
   final String? interpreterName;
   final String? interpreterPicture; // Bild-URL
-  final String partnerName; // Vermittler, der die Anfrage übernommen hat
+  final int interpretersNeeded; // so viele Dolmetscher:innen werden gebraucht
+  final int offerCount; // offene Zusagen von Dolmetscher:innen
   final RequestStatus status;
 
   const RequestData({
@@ -56,7 +57,8 @@ class RequestData {
     this.locationPhone = '',
     this.interpreterName,
     this.interpreterPicture,
-    this.partnerName = '',
+    this.interpretersNeeded = 1,
+    this.offerCount = 0,
     required this.status,
   });
 
@@ -75,7 +77,8 @@ class RequestData {
     locationPhone: json['location_phone'] as String? ?? '',
     interpreterName: _nonEmpty(json['interpreter_name']),
     interpreterPicture: _nonEmpty(json['interpreter_picture']),
-    partnerName: json['partner_name'] as String? ?? '',
+    interpretersNeeded: (json['interpreters_needed'] as num?)?.toInt() ?? 1,
+    offerCount: (json['offer_count'] as num?)?.toInt() ?? 0,
     status: RequestStatus.parse(json['status'] as String?),
   );
 
@@ -93,6 +96,25 @@ class RequestData {
           locationName.isNotEmpty ? locationName : locationStreet,
           locationCity,
         ].where((s) => s.isNotEmpty).join(', ');
+}
+
+// Zusage einer Dolmetscher:in (GET /me/requests/{id}/offers), ohne Vermittler.
+class OfferData {
+  final String id;
+  final String interpreterName;
+  final String status; // offered, awarded, declined
+
+  const OfferData({
+    required this.id,
+    required this.interpreterName,
+    required this.status,
+  });
+
+  factory OfferData.fromJson(Map<String, dynamic> json) => OfferData(
+    id: json['offer_id'] as String? ?? '',
+    interpreterName: json['interpreter_name'] as String? ?? '',
+    status: json['status'] as String? ?? '',
+  );
 }
 
 String? _nonEmpty(Object? v) => v is String && v.isNotEmpty ? v : null;

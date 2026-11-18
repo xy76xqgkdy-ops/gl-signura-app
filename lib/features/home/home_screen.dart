@@ -315,14 +315,22 @@ class _RequestTile extends StatelessWidget {
 
   const _RequestTile({required this.request, required this.onTap});
 
-  static const _noInterpreter = 'noch kein Dolmetscher';
+  static const _noInterpreter = 'noch keine Zusage';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final cancelled = request.status == RequestStatus.cancelled;
-    final interpreter = request.interpreterName ?? _noInterpreter;
+    // Beauftragt: Namen; offen: Zahl der Zusagen und Bedarf.
+    final interpreter = (request.interpreterName ?? '').isNotEmpty
+        ? request.interpreterName!
+        : request.status == RequestStatus.newRequest && request.offerCount > 0
+        ? '${request.offerCount} ${request.offerCount == 1 ? 'Zusage' : 'Zusagen'}'
+              ' · ${request.interpretersNeeded} benötigt'
+        : request.interpretersNeeded > 1
+        ? 'noch keine Zusage · ${request.interpretersNeeded} benötigt'
+        : _noInterpreter;
     final place = request.locationName.isNotEmpty
         ? request.locationName
         : request.purpose;

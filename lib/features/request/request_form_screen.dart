@@ -74,9 +74,26 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Neue Anfrage oder offene: alle Felder änderbar.
+  // Wie viele Dolmetscher:innen gebraucht werden (1–20).
+  late int _needed = _existing?.interpretersNeeded ?? 1;
+
+  // Zusagen von Dolmetscher:innen (nur Namen, keine Vermittler) und die
+  // zum Beauftragen angekreuzten.
+  List<OfferData> _offers = [];
+  final Set<String> _chosen = {};
+
+  bool get _isOpen =>
+      _existing != null && _existing.status == RequestStatus.newRequest;
+
+  // Neue Anfrage oder offene ohne Zusagen: alle Felder änderbar. Gibt es
+  // schon Zusagen, würden sie zu geänderten Angaben nicht mehr passen.
   bool get _editable =>
-      _existing == null || _existing.status == RequestStatus.newRequest;
+      _existing == null || (_isOpen && _existing.offerCount == 0);
+
+  List<OfferData> get _openOffers =>
+      _offers.where((o) => o.status == 'offered').toList();
+
+  bool get _canAward => _isOpen && _chosen.isNotEmpty && !_isLoading;
 
   bool get _canCancel =>
       _existing != null &&
@@ -87,6 +104,80 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   void initState() {
     super.initState();
     _loadLocations();
+    final e = _existing;
+    if (e != null &&
+        (e.offerCount > 0 || e.status == RequestStatus.confirmed)) {
+      _loadOffers();
+    }
+  }
+
+  Future<void> _loadOffers() async {
+    try {
+      final list = await ApiClient.getJsonList(
+        '/me/requests/${_existing!.id}/offers',
+      );
+      if (!mounted) return;
+      setState(() => _offers = list.map(OfferData.fromJson).toList());
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _errorMessage = e.message);
+    }
+  }
+
+  // Angekreuzte Zusagen beauftragen; die übrigen werden abgelehnt.
+  Future<void> _award() async {
+    final n = _chosen.length;
+    final names = [
+      for (final o in _openOffers)
+        if (_chosen.contains(o.id)) o.interpreterName,
+    ].join(', ');
+    final shortage = n < _needed
+        ? '\n\nSie brauchen $_needed, haben aber nur $n ausgewählt.'
+        : '';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          n == 1
+              ? '1 Dolmetscher:in beauftragen?'
+              : '$n Dolmetscher:innen beauftragen?',
+        ),
+        content: Text(
+          '$names$shortage\n\nDie anderen Zusagen werden abgelehnt. '
+          'Das lässt sich nicht rückgängig machen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('beauftragen'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await ApiClient.postJson(
+        '/me/requests/${_existing!.id}/award',
+        body: {'offer_ids': _chosen.toList()},
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.message;
+        _isLoading = false;
+      });
+      _loadOffers(); // z. B. inzwischen zurückgezogene Zusage
+    }
   }
 
   @override
@@ -214,6 +305,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       'location_city': _locCity.text.trim(),
       'location_email': _locEmail.text.trim(),
       'location_phone': _locPhone.text.trim(),
+      'interpreters_needed': _needed,
     };
     try {
       if (_existing == null) {
@@ -277,6 +369,82 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   }
 
   String _fmt(TimeOfDay t) => '${pad2(t.hour)}:${pad2(t.minute)}';
+
+  // Warum die Anfrage nicht mehr änderbar ist.
+  String _lockedHint(RequestData r) {
+    if (r.status == RequestStatus.confirmed) {
+      final names = (r.interpreterName ?? '').isNotEmpty
+          ? ': ${r.interpreterName}'
+          : '';
+      return 'Beauftragt$names. Sie können die Anfrage absagen.';
+    }
+    if (r.status == RequestStatus.newRequest && r.offerCount > 0) {
+      return 'Es gibt Zusagen von Dolmetscher:innen. Kreuzen Sie unten an, '
+          'wen Sie beauftragen möchten. Ändern geht nicht mehr; Sie können '
+          'die Anfrage aber absagen und neu anfragen.';
+    }
+    return 'Die Anfrage kann nicht mehr geändert werden. Sie können sie '
+        'absagen.';
+  }
+
+  // Zusagen: offen → ankreuzen; beauftragt → mit Haken; nur Namen.
+  Widget _offersSection(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final shown = _isOpen
+        ? _openOffers
+        : _offers.where((o) => o.status == 'awarded').toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          _isOpen
+              ? 'Zusagen: ${_chosen.length} von $_needed ausgewählt'
+              : 'Beauftragte Dolmetscher:innen',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (final o in shown)
+                _isOpen
+                    ? CheckboxListTile(
+                        value: _chosen.contains(o.id),
+                        onChanged: _isLoading
+                            ? null
+                            : (on) => setState(
+                                () => on == true
+                                    ? _chosen.add(o.id)
+                                    : _chosen.remove(o.id),
+                              ),
+                        secondary: const Icon(Icons.record_voice_over_outlined),
+                        title: Text(o.interpreterName),
+                        dense: true,
+                      )
+                    : ListTile(
+                        leading: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                        title: Text(o.interpreterName),
+                        dense: true,
+                      ),
+            ],
+          ),
+        ),
+        if (_isOpen && _chosen.length > _needed)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Sie haben mehr ausgewählt, als Sie brauchen ($_needed).',
+              style: TextStyle(fontSize: 12, color: muted),
+            ),
+          ),
+      ],
+    );
+  }
 
   // Stil der Eingabefelder (wie AppTextField) für Auswahlfelder.
   InputDecorationTheme _fieldTheme(BuildContext context) =>
@@ -356,14 +524,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                   _existing.status != RequestStatus.cancelled)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(
-                    _existing.partnerName.isNotEmpty
-                        ? 'Die Anfrage ist an ${_existing.partnerName} '
-                              'weitergeleitet und kann nicht mehr geändert '
-                              'werden. Sie können sie absagen.'
-                        : 'Die Anfrage ist schon weitergeleitet und kann nicht '
-                              'mehr geändert werden. Sie können sie absagen.',
-                  ),
+                  child: Text(_lockedHint(_existing)),
                 ),
               // Anlass und vor Ort / per Video in einer Zeile.
               Padding(
@@ -439,6 +600,39 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                       _fmt(_endTime),
                       () => _pickTime(false),
                     ),
+                  ),
+                ],
+              ),
+              // Wie viele Dolmetscher:innen gebraucht werden.
+              Row(
+                children: [
+                  const Icon(Icons.groups_outlined),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Text('Anzahl Dolmetscher:innen')),
+                  IconButton.outlined(
+                    tooltip: 'weniger',
+                    icon: const Icon(Icons.remove),
+                    onPressed: _editable && _needed > 1
+                        ? () => setState(() => _needed--)
+                        : null,
+                  ),
+                  SizedBox(
+                    width: 40,
+                    child: Text(
+                      '$_needed',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton.outlined(
+                    tooltip: 'mehr',
+                    icon: const Icon(Icons.add),
+                    onPressed: _editable && _needed < 20
+                        ? () => setState(() => _needed++)
+                        : null,
                   ),
                 ],
               ),
@@ -551,8 +745,12 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                   ],
                 ),
               ],
+              if (_offers.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _offersSection(context),
+              ],
               const SizedBox(height: 12),
-              // absagen links, speichern rechts.
+              // absagen links, speichern bzw. beauftragen rechts.
               Row(
                 children: [
                   if (_canCancel)
@@ -574,6 +772,12 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                       label: _existing == null ? 'Anfrage senden' : 'speichern',
                       isLoading: _isLoading,
                       onPressed: _canSave ? _save : null,
+                    )
+                  else if (_isOpen && _openOffers.isNotEmpty)
+                    PrimaryButton(
+                      label: 'beauftragen (${_chosen.length})',
+                      isLoading: _isLoading,
+                      onPressed: _canAward ? _award : null,
                     ),
                 ],
               ),
