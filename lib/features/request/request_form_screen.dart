@@ -454,6 +454,9 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                                 requestFocusOnTap: true,
                                 label: const Text('Einsatzort'),
                                 hintText: 'Einsatzort finden',
+                                // Suchsymbol statt Pfeil, offen wie geschlossen.
+                                trailingIcon: const Icon(Icons.search),
+                                selectedTrailingIcon: const Icon(Icons.search),
                                 menuHeight: 300,
                                 inputDecorationTheme: _fieldTheme(context),
                                 dropdownMenuEntries: [
