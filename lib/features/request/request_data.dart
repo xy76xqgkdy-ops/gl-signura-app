@@ -38,6 +38,7 @@ class RequestData {
   // Zugeteilter Dolmetscher; liefert das Backend noch nicht (dann null).
   final String? interpreterName;
   final String? interpreterPicture; // Bild-URL
+  final String partnerName; // Vermittler, der die Anfrage übernommen hat
   final RequestStatus status;
 
   const RequestData({
@@ -55,6 +56,7 @@ class RequestData {
     this.locationPhone = '',
     this.interpreterName,
     this.interpreterPicture,
+    this.partnerName = '',
     required this.status,
   });
 
@@ -73,6 +75,7 @@ class RequestData {
     locationPhone: json['location_phone'] as String? ?? '',
     interpreterName: _nonEmpty(json['interpreter_name']),
     interpreterPicture: _nonEmpty(json['interpreter_picture']),
+    partnerName: json['partner_name'] as String? ?? '',
     status: RequestStatus.parse(json['status'] as String?),
   );
 

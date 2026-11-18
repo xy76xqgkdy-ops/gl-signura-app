@@ -354,11 +354,15 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
               if (_existing != null &&
                   !_editable &&
                   _existing.status != RequestStatus.cancelled)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    'Die Anfrage ist schon weitergeleitet und kann nicht '
-                    'mehr geändert werden. Sie können sie absagen.',
+                    _existing.partnerName.isNotEmpty
+                        ? 'Die Anfrage ist an ${_existing.partnerName} '
+                              'weitergeleitet und kann nicht mehr geändert '
+                              'werden. Sie können sie absagen.'
+                        : 'Die Anfrage ist schon weitergeleitet und kann nicht '
+                              'mehr geändert werden. Sie können sie absagen.',
                   ),
                 ),
               // Anlass und vor Ort / per Video in einer Zeile.
