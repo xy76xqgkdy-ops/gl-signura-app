@@ -161,7 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final firstName = _user['first_name'] as String? ?? '';
     final ofDay = _requestsOfSelectedDay;
 
     return Scaffold(
@@ -221,13 +220,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Text(
-                    'Hallo $firstName',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
                 MonthCalendar(
                   selectedDate: _selectedDate,
                   onDateSelected: (d) => setState(() => _selectedDate = d),
