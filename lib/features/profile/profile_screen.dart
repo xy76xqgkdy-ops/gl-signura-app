@@ -36,8 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ...(_user['translation_languages'] as List? ?? []).whereType<String>(),
   ];
 
-  List<({String code, String name})> _allLanguages = [];
-  int _languagePickerReset = 0;
+  List<({String code, String name, String flag})> _allLanguages = [];
 
   // Nach "speichern" mit neuer E-Mail/Mobilnummer: Codes eingeben.
   bool _awaitingCodes = false;
@@ -80,7 +79,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _allLanguages = [
           for (final l in list)
-            (code: l['code'] as String, name: l['name'] as String),
+            (
+              code: l['code'] as String,
+              name: l['name'] as String,
+              flag: l['flag'] as String? ?? '',
+            ),
         ];
       });
     } on ApiException catch (e) {
@@ -88,9 +91,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  String _languageName(String code) => _allLanguages
-      .firstWhere((l) => l.code == code, orElse: () => (code: code, name: code))
-      .name;
+  // Gewählte Sprachen zuerst (in der Reihenfolge der Wahl), danach die
+  // übrigen in der Reihenfolge des Backends.
+  List<({String code, String name, String flag})> get _sortedLanguages => [
+    for (final code in _translation)
+      ..._allLanguages.where((l) => l.code == code),
+    ..._allLanguages.where((l) => !_translation.contains(l.code)),
+  ];
+
+  void _toggleLanguage(String code, bool on) =>
+      setState(() => on ? _translation.add(code) : _translation.remove(code));
 
   // Wie das Backend: +49… ohne Leerzeichen, damit "0170 1" = "+491701" ist.
   static String _normMobile(String m) {
@@ -194,9 +204,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ..._appLanguages,
       if (!_appLanguages.containsKey(_language)) _language: _language,
     };
-    final available = _allLanguages
-        .where((l) => !_translation.contains(l.code))
-        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -247,42 +254,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onChanged: (v) => setState(() => _language = v ?? _language),
           ),
         ),
-        // Sprachen für die Übersetzung: auswählen → erscheint als Token.
+        // Sprachen für die Übersetzung: Liste mit Flagge und Häkchen,
+        // gewählte stehen oben.
+        Text(
+          'Sprachen für die Übersetzung',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
         if (_allLanguages.isEmpty)
           const Center(child: CircularProgressIndicator())
         else
-          DropdownMenu<String>(
-            key: ValueKey('lang_$_languagePickerReset'),
-            expandedInsets: EdgeInsets.zero,
-            enableFilter: true,
-            requestFocusOnTap: true,
-            label: const Text('Sprachen für die Übersetzung'),
-            hintText: 'Sprache hinzufügen',
-            menuHeight: 300,
-            dropdownMenuEntries: [
-              for (final l in available)
-                DropdownMenuEntry(value: l.code, label: l.name),
-            ],
-            onSelected: (code) {
-              if (code == null) return;
-              setState(() {
-                _translation.add(code);
-                _languagePickerReset++; // Feld wieder leeren
-              });
-            },
-          ),
-        if (_translation.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+          Card(
+            margin: EdgeInsets.zero,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
               children: [
-                for (final code in _translation)
-                  InputChip(
-                    label: Text(_languageName(code)),
-                    onDeleted: () => setState(() => _translation.remove(code)),
-                    deleteButtonTooltipMessage: 'entfernen',
+                for (final l in _sortedLanguages)
+                  CheckboxListTile(
+                    key: ValueKey(l.code),
+                    value: _translation.contains(l.code),
+                    onChanged: (on) => _toggleLanguage(l.code, on ?? false),
+                    secondary: Text(
+                      l.flag,
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    title: Text(l.name),
+                    dense: true,
                   ),
               ],
             ),
