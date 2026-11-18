@@ -35,6 +35,9 @@ class RequestData {
   final String locationCity;
   final String locationEmail;
   final String locationPhone;
+  // Zugeteilter Dolmetscher; liefert das Backend noch nicht (dann null).
+  final String? interpreterName;
+  final String? interpreterPicture; // Bild-URL
   final RequestStatus status;
 
   const RequestData({
@@ -50,6 +53,8 @@ class RequestData {
     required this.locationCity,
     this.locationEmail = '',
     this.locationPhone = '',
+    this.interpreterName,
+    this.interpreterPicture,
     required this.status,
   });
 
@@ -66,8 +71,16 @@ class RequestData {
     locationCity: json['location_city'] as String? ?? '',
     locationEmail: json['location_email'] as String? ?? '',
     locationPhone: json['location_phone'] as String? ?? '',
+    interpreterName: _nonEmpty(json['interpreter_name']),
+    interpreterPicture: _nonEmpty(json['interpreter_picture']),
     status: RequestStatus.parse(json['status'] as String?),
   );
+
+  // Straße, PLZ Ort (für die Liste).
+  String get addressText => [
+    locationStreet,
+    [locationPostalcode, locationCity].where((s) => s.isNotEmpty).join(' '),
+  ].where((s) => s.isNotEmpty).join(', ');
 
   String get timeRange => '${start.formattedTime} – ${end.formattedTime}';
 
@@ -78,6 +91,8 @@ class RequestData {
           locationCity,
         ].where((s) => s.isNotEmpty).join(', ');
 }
+
+String? _nonEmpty(Object? v) => v is String && v.isNotEmpty ? v : null;
 
 // Ein eigener Einsatzort (GET/POST /me/locations).
 class LocationData {

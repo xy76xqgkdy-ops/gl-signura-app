@@ -209,30 +209,102 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// Eine Anfrage in der Liste:
+//   links   Foto des Dolmetschers, sonst Symbol Video bzw. Ort
+//   Zeile 1 fett: Beginn – Ende · Name des Einsatzorts
+//   Zeile 2 klein: Video + Dolmetscher bzw. Karte + Straße, PLZ Ort
+//   Zeile 3 klein (nur vor Ort): sprechende Person + Dolmetscher
+//   rechts  Status
 class _RequestTile extends StatelessWidget {
   final RequestData request;
   final VoidCallback onTap;
 
   const _RequestTile({required this.request, required this.onTap});
 
+  static const _noInterpreter = 'noch kein Dolmetscher';
+
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return ListTile(
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
+    final cancelled = request.status == RequestStatus.cancelled;
+    final interpreter = request.interpreterName ?? _noInterpreter;
+    final place = request.locationName.isNotEmpty
+        ? request.locationName
+        : request.purpose;
+
+    Widget line(IconData icon, String text) => Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: muted),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: muted),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return InkWell(
       onTap: onTap,
-      leading: Icon(
-        request.remote ? Icons.videocam : Icons.place,
-        color: request.status.color,
-        size: 32,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _avatar(context),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${request.timeRange}  ·  $place',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      decoration: cancelled ? TextDecoration.lineThrough : null,
+                    ),
+                  ),
+                  if (request.remote)
+                    line(Icons.videocam_outlined, interpreter)
+                  else ...[
+                    line(Icons.map_outlined, request.addressText),
+                    line(Icons.record_voice_over_outlined, interpreter),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            StatusChip(status: request.status),
+          ],
+        ),
       ),
-      title: Text(
-        '${request.timeRange}  ·  ${request.purpose}',
-        style: request.status == RequestStatus.cancelled
-            ? const TextStyle(decoration: TextDecoration.lineThrough)
-            : null,
-      ),
-      subtitle: Text(request.placeText, style: TextStyle(color: muted)),
-      trailing: StatusChip(status: request.status),
+    );
+  }
+
+  Widget _avatar(BuildContext context) {
+    final picture = request.interpreterPicture;
+    final color = request.status.color;
+    if (picture != null) {
+      return CircleAvatar(
+        radius: 24,
+        backgroundImage: NetworkImage(picture),
+        onBackgroundImageError: (_, _) {}, // Bild fehlt → Hintergrundfarbe
+        backgroundColor: color.withValues(alpha: 0.15),
+      );
+    }
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: color.withValues(alpha: 0.15),
+      child: Icon(request.remote ? Icons.videocam : Icons.place, color: color),
     );
   }
 }

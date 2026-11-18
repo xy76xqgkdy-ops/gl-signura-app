@@ -43,7 +43,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
 
   // Auswahl für den Anlass. Ein älterer, freier Anlass einer vorhandenen
   // Anfrage bleibt als zusätzliche Option erhalten.
-  static const _purposes = ['Arzt', 'Behörde', 'Privat', 'Sonstige'];
+  static const _purposes = ['Arzt', 'Arbeit', 'Behörde', 'Privat', 'Sonstige'];
   List<String> get _purposeOptions => [
     ..._purposes,
     if (_existing != null && !_purposes.contains(_existing.purpose))
