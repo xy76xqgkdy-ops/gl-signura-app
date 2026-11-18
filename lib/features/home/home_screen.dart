@@ -17,8 +17,8 @@ import '../request/status_chip.dart';
 
 // Startseite: Monatskalender mit den eigenen Anfragen (farbige Zähler je
 // Status, Monat per Wischen wechseln), darunter die Anfragen des gewählten
-// Tages; "+" neben dem Datum legt eine neue an. Oben "⋮" für Profil,
-// Profilbild, Benachrichtigungen und Abmelden.
+// Tages; "+" neben dem Datum legt eine neue an. Oben "⋮" für Profilbild,
+// Person bearbeiten, Einsatzorte, Benachrichtigungen und Abmelden.
 // Daten: GET /me/requests für den angezeigten Monat.
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -29,7 +29,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-enum _Menu { profile, picture, notifications, logout }
+enum _Menu { picture, profile, locations, notifications, logout }
 
 class _HomeScreenState extends State<HomeScreen> {
   late Map<String, dynamic> _user = widget.user;
@@ -131,6 +131,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case _Menu.picture:
         await Navigator.of(context)
             .push(MaterialPageRoute(builder: (_) => const PictureScreen()));
+      case _Menu.locations:
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const LocationListScreen()));
+        if (mounted) _load(); // geänderte Ortsnamen in den Anfragen
       case _Menu.notifications:
         final user = await Navigator.of(context).push<Map<String, dynamic>>(
           MaterialPageRoute(builder: (_) => NotificationsScreen(user: _user)),
@@ -163,21 +168,18 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(DateFormat.yMMMM('de_DE').format(_focusedMonth)),
         actions: [
-          IconButton(
-            tooltip: 'Einsatzorte',
-            icon: const Icon(Icons.place_outlined),
-            onPressed: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const LocationListScreen()),
-              );
-              if (mounted) _load(); // geänderte Ortsnamen in den Anfragen
-            },
-          ),
           PopupMenuButton<_Menu>(
             tooltip: 'Menü',
             icon: const Icon(Icons.more_vert),
             onSelected: _onMenu,
             itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _Menu.picture,
+                child: ListTile(
+                  leading: Icon(Icons.account_circle_outlined),
+                  title: Text('Profilbild'),
+                ),
+              ),
               PopupMenuItem(
                 value: _Menu.profile,
                 child: ListTile(
@@ -186,10 +188,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               PopupMenuItem(
-                value: _Menu.picture,
+                value: _Menu.locations,
                 child: ListTile(
-                  leading: Icon(Icons.account_circle_outlined),
-                  title: Text('Profilbild'),
+                  leading: Icon(Icons.place_outlined),
+                  title: Text('Einsatzorte'),
                 ),
               ),
               PopupMenuItem(
