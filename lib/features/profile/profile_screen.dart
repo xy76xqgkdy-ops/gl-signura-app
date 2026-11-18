@@ -5,6 +5,7 @@ import '../../core/utils/validation_utils.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/code_input_field.dart';
 import '../../core/widgets/error_text.dart';
+import '../../core/widgets/flag_check_list.dart';
 import '../../core/widgets/primary_button.dart';
 
 // Person bearbeiten (GET/PUT /me): Name, E-Mail, Mobilnummer, Sprache der
@@ -47,7 +48,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _errorMessage;
 
   // Sprache der App (Anzeige, E-Mails).
-  static const _appLanguages = {'de_DE': 'Deutsch', 'en_US': 'English'};
+  static const List<FlagItem> _appLanguages = [
+    (value: 'de_DE', name: 'Deutsch', flag: '🇩🇪'),
+    (value: 'en_US', name: 'English', flag: '🇬🇧'),
+  ];
 
   String _s(String key) => _user[key] as String? ?? '';
 
@@ -90,14 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() => _errorMessage = e.message);
     }
   }
-
-  // Gewählte Sprachen zuerst (in der Reihenfolge der Wahl), danach die
-  // übrigen in der Reihenfolge des Backends.
-  List<({String code, String name, String flag})> get _sortedLanguages => [
-    for (final code in _translation)
-      ..._allLanguages.where((l) => l.code == code),
-    ..._allLanguages.where((l) => !_translation.contains(l.code)),
-  ];
 
   void _toggleLanguage(String code, bool on) =>
       setState(() => on ? _translation.add(code) : _translation.remove(code));
@@ -203,10 +199,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _form(BuildContext context) {
     void changed(String _) => setState(() {});
-    final languageOptions = {
+    // Unbekannte, gespeicherte Sprache der App (z. B. aus der alten App) zeigen.
+    final appLanguages = [
       ..._appLanguages,
-      if (!_appLanguages.containsKey(_language)) _language: _language,
-    };
+      if (!_appLanguages.any((l) => l.value == _language))
+        (value: _language, name: _language, flag: '🏳️'),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -242,50 +240,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           keyboardType: TextInputType.phone,
           onChanged: changed,
         ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: DropdownButtonFormField<String>(
-            initialValue: _language,
-            decoration: const InputDecoration(
-              labelText: 'Sprache der App',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              for (final e in languageOptions.entries)
-                DropdownMenuItem(value: e.key, child: Text(e.value)),
-            ],
-            onChanged: (v) => setState(() => _language = v ?? _language),
-          ),
+        // Sprache der App: genau eine; Antippen setzt das Häkchen um.
+        FlagCheckList(
+          label: 'Sprache der App',
+          items: appLanguages,
+          selected: [_language],
+          onChanged: (value, _) => setState(() => _language = value),
         ),
-        // Sprachen für die Übersetzung: Liste mit Flagge und Häkchen,
-        // gewählte stehen oben.
-        Text(
-          'Sprachen für die Übersetzung',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 16),
+        // Sprachen für die Übersetzung: mehrere, gewählte stehen oben.
         if (_allLanguages.isEmpty)
           const Center(child: CircularProgressIndicator())
         else
-          Card(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (final l in _sortedLanguages)
-                  CheckboxListTile(
-                    key: ValueKey(l.code),
-                    value: _translation.contains(l.code),
-                    onChanged: (on) => _toggleLanguage(l.code, on ?? false),
-                    secondary: Text(
-                      l.flag,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                    title: Text(l.name),
-                    dense: true,
-                  ),
-              ],
-            ),
+          FlagCheckList(
+            label: 'Sprachen für die Übersetzung',
+            items: [
+              for (final l in _allLanguages)
+                (value: l.code, name: l.name, flag: l.flag),
+            ],
+            selected: _translation,
+            onChanged: _toggleLanguage,
           ),
         const SizedBox(height: 16),
         PrimaryButton(
