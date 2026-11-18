@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -60,6 +61,7 @@ class SignuraApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
+      scrollBehavior: const _AppScrollBehavior(),
       home: const StartScreen(),
     );
   }
@@ -68,3 +70,17 @@ class SignuraApp extends StatelessWidget {
 // Farbe für Platzhalter (hintText): grau, deutlich schwächer als Eingaben.
 Color _hint(ColorScheme scheme) =>
     scheme.onSurfaceVariant.withValues(alpha: 0.6);
+
+// Wischen (Kalender-Monat wechseln, Listen ziehen) auch mit Maus und
+// Trackpad; Flutter erlaubt im Browser sonst nur Touch.
+class _AppScrollBehavior extends MaterialScrollBehavior {
+  const _AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
+}

@@ -67,6 +67,37 @@ class ApiClient {
     return data is Map<String, dynamic> ? data : const {};
   }
 
+  // Binärdaten laden (z. B. Profilbild); null bei 404.
+  static Future<Uint8List?> getBytes(String path) async {
+    final http.Response res;
+    try {
+      res = await http
+          .get(Uri.parse('$baseUrl$path'), headers: _headers)
+          .timeout(const Duration(seconds: 15));
+    } catch (_) {
+      throw const ApiException('Server nicht erreichbar.');
+    }
+    if (res.statusCode == 404) return null;
+    if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
+    throw ApiException(
+      'Fehler (HTTP ${res.statusCode})',
+      statusCode: res.statusCode,
+    );
+  }
+
+  // Binärdaten hochladen (z. B. Profilbild) mit passendem Content-Type.
+  static Future<void> putBytes(
+    String path,
+    Uint8List data,
+    String contentType,
+  ) => _send(
+    () => http.put(
+      Uri.parse('$baseUrl$path'),
+      headers: {..._headers, 'Content-Type': contentType},
+      body: data,
+    ),
+  );
+
   static Future<void> deleteJson(String path) =>
       _send(() => http.delete(Uri.parse('$baseUrl$path'), headers: _headers));
 

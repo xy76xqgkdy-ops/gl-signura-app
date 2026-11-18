@@ -8,12 +8,17 @@ import '../../core/widgets/day_list_card.dart';
 import '../../core/widgets/month_calendar.dart';
 import '../auth/login_screen.dart';
 import '../location/location_list_screen.dart';
+import '../profile/notifications_screen.dart';
+import '../profile/picture_screen.dart';
+import '../profile/profile_screen.dart';
 import '../request/request_data.dart';
 import '../request/request_form_screen.dart';
 import '../request/status_chip.dart';
 
 // Startseite: Monatskalender mit den eigenen Anfragen (farbige Zähler je
-// Status), darunter die Anfragen des gewählten Tages. "+" legt eine neue an.
+// Status, Monat per Wischen wechseln), darunter die Anfragen des gewählten
+// Tages; "+" neben dem Datum legt eine neue an. Oben "⋮" für Profil,
+// Profilbild, Benachrichtigungen und Abmelden.
 // Daten: GET /me/requests für den angezeigten Monat.
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> user;
@@ -24,7 +29,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+enum _Menu { profile, picture, notifications, logout }
+
 class _HomeScreenState extends State<HomeScreen> {
+  late Map<String, dynamic> _user = widget.user;
   DateTime _selectedDate = today();
   // UTC wie in dolmi, passend zu table_calendar (siehe month_calendar.dart).
   late DateTime _focusedMonth = DateTime.utc(
@@ -113,6 +121,26 @@ class _HomeScreenState extends State<HomeScreen> {
     if (changed == true && mounted) _load();
   }
 
+  Future<void> _onMenu(_Menu item) async {
+    switch (item) {
+      case _Menu.profile:
+        final user = await Navigator.of(context).push<Map<String, dynamic>>(
+          MaterialPageRoute(builder: (_) => ProfileScreen(user: _user)),
+        );
+        if (user != null && mounted) setState(() => _user = user);
+      case _Menu.picture:
+        await Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const PictureScreen()));
+      case _Menu.notifications:
+        final user = await Navigator.of(context).push<Map<String, dynamic>>(
+          MaterialPageRoute(builder: (_) => NotificationsScreen(user: _user)),
+        );
+        if (user != null && mounted) setState(() => _user = user);
+      case _Menu.logout:
+        await _logout();
+    }
+  }
+
   Future<void> _logout() async {
     await SessionStore.logout();
     if (!mounted) return;
@@ -128,18 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final firstName = widget.user['first_name'] as String? ?? '';
+    final firstName = _user['first_name'] as String? ?? '';
     final ofDay = _requestsOfSelectedDay;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.yMMMM('de_DE').format(_focusedMonth)),
         actions: [
-          IconButton(
-            tooltip: 'Neue Anfrage',
-            icon: const Icon(Icons.add, size: 32),
-            onPressed: _newRequest,
-          ),
           IconButton(
             tooltip: 'Einsatzorte',
             icon: const Icon(Icons.place_outlined),
@@ -150,10 +173,41 @@ class _HomeScreenState extends State<HomeScreen> {
               if (mounted) _load(); // geänderte Ortsnamen in den Anfragen
             },
           ),
-          IconButton(
-            tooltip: 'Abmelden',
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
+          PopupMenuButton<_Menu>(
+            tooltip: 'Menü',
+            icon: const Icon(Icons.more_vert),
+            onSelected: _onMenu,
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _Menu.profile,
+                child: ListTile(
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Person bearbeiten'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _Menu.picture,
+                child: ListTile(
+                  leading: Icon(Icons.account_circle_outlined),
+                  title: Text('Profilbild'),
+                ),
+              ),
+              PopupMenuItem(
+                value: _Menu.notifications,
+                child: ListTile(
+                  leading: Icon(Icons.notifications_outlined),
+                  title: Text('Benachrichtigungen'),
+                ),
+              ),
+              PopupMenuDivider(),
+              PopupMenuItem(
+                value: _Menu.logout,
+                child: ListTile(
+                  leading: Icon(Icons.logout),
+                  title: Text('Abmelden'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -184,26 +238,72 @@ class _HomeScreenState extends State<HomeScreen> {
                   isLoading: _isLoading,
                 ),
                 const Divider(height: 1),
+                // Datum des Tages, rechts "+" für eine neue Anfrage.
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: Text(
-                    DateFormat.yMMMMEEEEd('de_DE').format(_selectedDate),
-                    style: Theme.of(context).textTheme.labelLarge,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          DateFormat.yMMMMEEEEd('de_DE').format(_selectedDate),
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                      IconButton.filledTonal(
+                        tooltip: 'Neue Anfrage',
+                        icon: const Icon(Icons.add),
+                        onPressed: _newRequest,
+                      ),
+                    ],
                   ),
                 ),
-                DayListCard(
-                  isLoading: false,
-                  errorMessage: _errorMessage,
-                  emptyText: 'Keine Anfragen an diesem Tag',
-                  children: [
-                    for (final r in ofDay)
-                      _RequestTile(request: r, onTap: () => _openRequest(r)),
-                  ],
-                ),
+                if (ofDay.isEmpty && _errorMessage == null && !_isLoading)
+                  _EmptyDay(onNew: _newRequest)
+                else
+                  DayListCard(
+                    isLoading: false,
+                    errorMessage: _errorMessage,
+                    children: [
+                      for (final r in ofDay)
+                        _RequestTile(request: r, onTap: () => _openRequest(r)),
+                    ],
+                  ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// Leerer Tag: Hinweis und Button "Neue Anfrage" in der Mitte.
+class _EmptyDay extends StatelessWidget {
+  final VoidCallback onNew;
+
+  const _EmptyDay({required this.onNew});
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+      child: Column(
+        children: [
+          Icon(Icons.event_available_outlined, size: 48, color: muted),
+          const SizedBox(height: 8),
+          Text(
+            'An diesem Tag haben Sie keine Anfragen.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: muted),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onNew,
+            icon: const Icon(Icons.add),
+            label: const Text('Neue Anfrage'),
+          ),
+        ],
       ),
     );
   }

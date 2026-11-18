@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Für Ihr Profilbild.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Für Ihr Profilbild aus der Galerie.</string>
 </dict>
 </plist>
