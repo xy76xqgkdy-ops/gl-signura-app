@@ -177,7 +177,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'email': _email.text.trim(),
         'mobile': _mobile.text.trim(),
         'language': _language,
-        'translation_languages': _translation,
+        // Nur Sprachen, die das Backend noch anbietet (abgeschaltete fallen weg).
+        'translation_languages': _translation
+            .where((c) => _allLanguages.any((l) => l.code == c))
+            .toList(),
         if (_emailCodeSent) 'email_code': _emailCode.text.trim(),
         if (_mobileCodeSent) 'mobile_code': _mobileCode.text.trim(),
       },
