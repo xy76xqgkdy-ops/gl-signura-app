@@ -10,6 +10,7 @@ import '../auth/login_screen.dart';
 import '../location/location_list_screen.dart';
 import '../request/request_data.dart';
 import '../request/request_form_screen.dart';
+import '../request/status_chip.dart';
 
 // Startseite: Monatskalender mit den eigenen Anfragen (farbige Zähler je
 // Status), darunter die Anfragen des gewählten Tages. "+" legt eine neue an.
@@ -231,11 +232,7 @@ class _RequestTile extends StatelessWidget {
             : null,
       ),
       subtitle: Text(request.placeText, style: TextStyle(color: muted)),
-      trailing: Chip(
-        label: Text(request.status.text),
-        side: BorderSide(color: request.status.color),
-        visualDensity: VisualDensity.compact,
-      ),
+      trailing: StatusChip(status: request.status),
     );
   }
 }

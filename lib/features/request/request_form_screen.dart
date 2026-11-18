@@ -7,6 +7,7 @@ import '../../core/widgets/error_text.dart';
 import '../../core/widgets/primary_button.dart';
 import '../location/location_form_screen.dart';
 import 'request_data.dart';
+import 'status_chip.dart';
 
 // Neue Anfrage (POST /me/requests) oder vorhandene bearbeiten
 // (PUT /me/requests/{id}) und absagen (POST /me/requests/{id}/cancel).
@@ -334,6 +335,14 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
               ? 'Anfrage bearbeiten'
               : 'Anfrage',
         ),
+        // Status oben rechts (bei neuer Anfrage gibt es noch keinen).
+        actions: [
+          if (_existing != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: StatusChip(status: _existing.status),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -341,24 +350,17 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (_existing != null) ...[
-                Row(
-                  children: [
-                    Icon(Icons.circle, size: 12, color: _existing.status.color),
-                    const SizedBox(width: 8),
-                    Text('Status: ${_existing.status.text}'),
-                  ],
-                ),
-                if (!_editable && _existing.status != RequestStatus.cancelled)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'Die Anfrage ist schon weitergeleitet und kann nicht '
-                      'mehr geändert werden. Sie können sie absagen.',
-                    ),
+              // Warum die Felder gesperrt sind (Status selbst steht oben rechts).
+              if (_existing != null &&
+                  !_editable &&
+                  _existing.status != RequestStatus.cancelled)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Die Anfrage ist schon weitergeleitet und kann nicht '
+                    'mehr geändert werden. Sie können sie absagen.',
                   ),
-                const SizedBox(height: 16),
-              ],
+                ),
               // Anlass und vor Ort / per Video in einer Zeile.
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
