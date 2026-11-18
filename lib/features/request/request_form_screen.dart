@@ -288,6 +288,8 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
           borderSide: BorderSide.none,
         ),
         floatingLabelBehavior: FloatingLabelBehavior.always,
+        // Eigener Feldstil überschreibt das Theme: Platzhalter hier auch grau.
+        hintStyle: TextStyle(color: Theme.of(context).hintColor),
       );
 
   // Antippbares Feld im Stil der Eingabefelder (Datum, Beginn, Ende).

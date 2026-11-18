@@ -37,6 +37,11 @@ class SignuraApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: lightScheme,
+        // Platzhalter grau, damit man sieht, dass das Feld leer ist.
+        hintColor: _hint(lightScheme),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: TextStyle(color: _hint(lightScheme)),
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: lightScheme.surfaceContainerHighest,
           foregroundColor: lightScheme.onSurface,
@@ -45,6 +50,10 @@ class SignuraApp extends StatelessWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         colorScheme: darkScheme,
+        hintColor: _hint(darkScheme),
+        inputDecorationTheme: InputDecorationTheme(
+          hintStyle: TextStyle(color: _hint(darkScheme)),
+        ),
         appBarTheme: AppBarTheme(
           backgroundColor: darkScheme.surfaceContainerHighest,
           foregroundColor: darkScheme.onSurface,
@@ -55,3 +64,7 @@ class SignuraApp extends StatelessWidget {
     );
   }
 }
+
+// Farbe für Platzhalter (hintText): grau, deutlich schwächer als Eingaben.
+Color _hint(ColorScheme scheme) =>
+    scheme.onSurfaceVariant.withValues(alpha: 0.6);
