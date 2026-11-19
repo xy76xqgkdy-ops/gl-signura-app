@@ -57,10 +57,10 @@ class _LocationListScreenState extends State<LocationListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Einsatzorte'),
+        title: const Text('Meine Orte'),
         actions: [
           IconButton(
-            tooltip: 'Neuer Einsatzort',
+            tooltip: 'Neuer Ort',
             icon: const Icon(Icons.add, size: 32),
             onPressed: () => _open(),
           ),
@@ -75,9 +75,7 @@ class _LocationListScreenState extends State<LocationListScreen> {
               DayListCard(
                 isLoading: _isLoading,
                 errorMessage: _errorMessage,
-                emptyText: _isLoading
-                    ? null
-                    : 'Noch keine Einsatzorte. Mit „+“ legen Sie einen an.',
+                emptyText: _isLoading ? null : 'Sie haben noch keine Orte gespeichert. Tippen Sie auf +.',
                 children: [
                   for (final l in _locations)
                     ListTile(

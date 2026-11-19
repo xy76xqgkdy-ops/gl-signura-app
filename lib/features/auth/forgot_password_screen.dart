@@ -189,9 +189,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         );
       case _Step.success:
         return SuccessScreen(
-          title: 'Passwort wurde geändert.',
-          subtitle:
-              'Ihr neues Passwort ist jetzt gültig. Sie können sich anmelden.',
+          title: 'Ihr Passwort ist geändert.',
+          subtitle: 'Sie können sich jetzt mit dem neuen Passwort anmelden.',
           buttonLabel: 'Zur Anmeldung',
           onPressed: () => Navigator.of(context).pop(),
         );

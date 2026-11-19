@@ -6,7 +6,7 @@ import '../../core/utils/date_utils.dart';
 enum RequestStatus {
   newRequest('new', 'Offen', Colors.red),
   transferred('transferred', 'Weitergeleitet', Colors.blue),
-  confirmed('confirmed', 'Beauftragt', Colors.green),
+  confirmed('confirmed', 'Gebucht', Colors.green),
   cancelled('cancelled', 'Abgesagt', Colors.grey);
 
   final String apiValue;

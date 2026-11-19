@@ -80,7 +80,7 @@ class _CodeStepState extends State<CodeStep> {
         const SizedBox(height: 8),
         Center(
           child: Text(
-            'Noch ${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')} Minuten',
+            'Der Code gilt noch ${_secondsLeft ~/ 60}:${(_secondsLeft % 60).toString().padLeft(2, '0')} Minuten.',
             style: TextStyle(
               fontSize: 13,
               color: Theme.of(context).colorScheme.onSurfaceVariant,

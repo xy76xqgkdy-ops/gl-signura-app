@@ -58,7 +58,8 @@ class _PictureScreenState extends State<PictureScreen> {
       );
     } catch (_) {
       setState(
-        () => _errorMessage = 'Kamera oder Galerie ist nicht verfügbar.',
+        () => _errorMessage =
+            'Die Kamera oder die Fotos können nicht geöffnet werden.',
       );
       return;
     }

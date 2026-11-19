@@ -137,13 +137,11 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          n == 1
-              ? '1 Dolmetscher:in beauftragen?'
-              : '$n Dolmetscher:innen beauftragen?',
+          n == 1 ? '1 Dolmetscher buchen?' : '$n Dolmetscher buchen?',
         ),
         content: Text(
-          '$names$shortage\n\nDie anderen Zusagen werden abgelehnt. '
-          'Das lässt sich nicht rückgängig machen.',
+          '$names$shortage\n\nDie anderen bekommen eine Absage. '
+          'Sie können das nicht rückgängig machen.',
         ),
         actions: [
           TextButton(
@@ -152,7 +150,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('beauftragen'),
+            child: const Text('buchen'),
           ),
         ],
       ),
@@ -332,7 +330,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
         content: Text(
           '${_existing!.purpose} am ${_existing.start.formattedDate} '
           'um ${_existing.start.formattedTime} Uhr wird abgesagt. '
-          'Das lässt sich nicht rückgängig machen.',
+          'Sie können das nicht rückgängig machen.',
         ),
         actions: [
           TextButton(
@@ -376,12 +374,12 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       final names = (r.interpreterName ?? '').isNotEmpty
           ? ': ${r.interpreterName}'
           : '';
-      return 'Beauftragt$names. Sie können die Anfrage absagen.';
+      return 'Gebucht$names. Sie können den Termin absagen.';
     }
     if (r.status == RequestStatus.newRequest && r.offerCount > 0) {
-      return 'Es gibt Zusagen von Dolmetscher:innen. Kreuzen Sie unten an, '
-          'wen Sie beauftragen möchten. Ändern geht nicht mehr; Sie können '
-          'die Anfrage aber absagen und neu anfragen.';
+      return 'Es gibt Zusagen. Kreuzen Sie an, wen Sie buchen möchten. '
+          'Sie können die Anfrage nicht mehr ändern. Sie können sie absagen '
+          'und eine neue Anfrage stellen.';
     }
     return 'Die Anfrage kann nicht mehr geändert werden. Sie können sie '
         'absagen.';
@@ -399,7 +397,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
         Text(
           _isOpen
               ? 'Zusagen: ${_chosen.length} von $_needed ausgewählt'
-              : 'Beauftragte Dolmetscher:innen',
+              : 'Gebuchte Dolmetscher',
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 4),
@@ -537,7 +535,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                         isExpanded: true,
                         hint: const Text('Bitte wählen'),
                         decoration: InputDecoration(
-                          labelText: 'Anlass',
+                          labelText: 'Grund',
                           filled: true,
                           fillColor: Theme.of(context)
                               .colorScheme
@@ -608,7 +606,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                 children: [
                   const Icon(Icons.groups_outlined),
                   const SizedBox(width: 12),
-                  const Expanded(child: Text('Anzahl Dolmetscher:innen')),
+                  const Expanded(child: Text('Wie viele Dolmetscher?')),
                   IconButton.outlined(
                     tooltip: 'weniger',
                     icon: const Icon(Icons.remove),
@@ -652,8 +650,8 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                                 expandedInsets: EdgeInsets.zero,
                                 enableFilter: true,
                                 requestFocusOnTap: true,
-                                label: const Text('Einsatzort'),
-                                hintText: 'Einsatzort finden',
+                                label: const Text('Ort'),
+                                hintText: 'Ort suchen',
                                 // Suchsymbol statt Pfeil, offen wie geschlossen.
                                 trailingIcon: const Icon(Icons.search),
                                 selectedTrailingIcon: const Icon(Icons.search),
@@ -676,7 +674,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
-                        tooltip: 'Neuer Einsatzort',
+                        tooltip: 'Neuer Ort',
                         icon: const Icon(Icons.add),
                         onPressed: _isLoading ? null : _newLocation,
                       ),
@@ -775,7 +773,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                     )
                   else if (_isOpen && _openOffers.isNotEmpty)
                     PrimaryButton(
-                      label: 'beauftragen (${_chosen.length})',
+                      label: 'buchen (${_chosen.length})',
                       isLoading: _isLoading,
                       onPressed: _canAward ? _award : null,
                     ),

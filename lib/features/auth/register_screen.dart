@@ -99,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrieren')),
+      appBar: AppBar(title: const Text('Neues Konto')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
@@ -116,7 +116,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Ihre Angaben brauchen wir für Ihr Konto und zur Anmeldung.',
+              'Bitte geben Sie Ihren Namen und Ihre E-Mail-Adresse ein.',
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
@@ -152,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       case _Step.code:
         return CodeStep(
           codeController: _codeController,
-          buttonLabel: 'Registrieren',
+          buttonLabel: 'Konto anlegen',
           isLoading: _isLoading,
           canSubmit: _canSubmitCode,
           onSubmit: _submitRegister,
@@ -161,8 +161,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       case _Step.success:
         return SuccessScreen(
-          title: 'Registrierung abgeschlossen',
-          subtitle: 'Ihr Konto ist jetzt fertig. Sie können sich anmelden.',
+          title: 'Ihr Konto ist fertig.',
+          subtitle: 'Sie können sich jetzt anmelden.',
           buttonLabel: 'Zur Anmeldung',
           onPressed: () => Navigator.of(context).pop(),
         );

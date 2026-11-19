@@ -183,14 +183,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: _Menu.profile,
                 child: ListTile(
                   leading: Icon(Icons.person_outline),
-                  title: Text('Person bearbeiten'),
+                  title: Text('Meine Daten'),
                 ),
               ),
               PopupMenuItem(
                 value: _Menu.locations,
                 child: ListTile(
                   leading: Icon(Icons.place_outlined),
-                  title: Text('Einsatzorte'),
+                  title: Text('Meine Orte'),
                 ),
               ),
               PopupMenuItem(
@@ -327,9 +327,9 @@ class _RequestTile extends StatelessWidget {
         ? request.interpreterName!
         : request.status == RequestStatus.newRequest && request.offerCount > 0
         ? '${request.offerCount} ${request.offerCount == 1 ? 'Zusage' : 'Zusagen'}'
-              ' · ${request.interpretersNeeded} benötigt'
+              ' · Sie brauchen ${request.interpretersNeeded}'
         : request.interpretersNeeded > 1
-        ? 'noch keine Zusage · ${request.interpretersNeeded} benötigt'
+        ? 'noch keine Zusage · Sie brauchen ${request.interpretersNeeded}'
         : _noInterpreter;
     final place = request.locationName.isNotEmpty
         ? request.locationName

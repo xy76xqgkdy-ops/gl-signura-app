@@ -83,10 +83,10 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Einsatzort löschen?'),
+        title: const Text('Ort löschen?'),
         content: Text(
-          '„${_existing!.name}“ wird aus Ihrer Liste entfernt. '
-          'Ihre Anfragen behalten ihre Adresse.',
+          '„${_existing!.name}“ wird gelöscht. '
+          'Ihre Anfragen ändern sich nicht.',
         ),
         actions: [
           TextButton(
@@ -127,9 +127,7 @@ class _LocationFormScreenState extends State<LocationFormScreen> {
     void changed(String _) => setState(() {});
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _existing == null ? 'Neuer Einsatzort' : 'Einsatzort bearbeiten',
-        ),
+        title: Text(_existing == null ? 'Neuer Ort' : 'Ort bearbeiten'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

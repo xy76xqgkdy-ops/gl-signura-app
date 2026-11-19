@@ -75,7 +75,9 @@ class ApiClient {
           .get(Uri.parse('$baseUrl$path'), headers: _headers)
           .timeout(const Duration(seconds: 15));
     } catch (_) {
-      throw const ApiException('Server nicht erreichbar.');
+      throw const ApiException(
+        'Keine Verbindung. Bitte prüfen Sie Ihr Internet.',
+      );
     }
     if (res.statusCode == 404) return null;
     if (res.statusCode >= 200 && res.statusCode < 300) return res.bodyBytes;
@@ -124,9 +126,13 @@ class ApiClient {
     try {
       res = await request().timeout(const Duration(seconds: 15));
     } on TimeoutException {
-      throw const ApiException('Server antwortet nicht.');
+      throw const ApiException(
+        'Keine Antwort vom Server. Bitte versuchen Sie es später noch einmal.',
+      );
     } catch (_) {
-      throw const ApiException('Server nicht erreichbar.');
+      throw const ApiException(
+        'Keine Verbindung. Bitte prüfen Sie Ihr Internet.',
+      );
     }
 
     dynamic data;

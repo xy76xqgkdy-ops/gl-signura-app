@@ -62,7 +62,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: const EdgeInsets.all(12),
           children: [
             const Text(
-              'Wie möchten Sie über Ihre Anfragen informiert werden?',
+              'Wie sollen wir Ihnen Nachrichten schicken?',
               style: TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 8),
@@ -88,8 +88,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Text(
-                  'Für SMS und Messenger brauchen wir Ihre Mobilnummer. '
-                  'Tragen Sie sie unter „Person bearbeiten“ ein.',
+                  'Für SMS und Messenger brauchen wir Ihre Handynummer. '
+                  'Sie tragen sie bei „Meine Daten“ ein.',
                   style: TextStyle(fontSize: 12, color: muted),
                 ),
               ),

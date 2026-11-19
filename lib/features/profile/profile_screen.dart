@@ -187,7 +187,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Person bearbeiten')),
+      appBar: AppBar(title: const Text('Meine Daten')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(12),
@@ -236,7 +236,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         AppTextField(
           controller: _mobile,
-          label: 'Mobilnummer',
+          label: 'Handynummer',
           keyboardType: TextInputType.phone,
           onChanged: changed,
         ),
@@ -253,7 +253,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Center(child: CircularProgressIndicator())
         else
           FlagCheckList(
-            label: 'Sprachen für die Übersetzung',
+            label: 'Welche Sprache brauchen Sie?',
             items: [
               for (final l in _allLanguages)
                 (value: l.code, name: l.name, flag: l.flag),
@@ -300,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _mobileCode,
           ),
         Text(
-          'Die Codes sind 10 Minuten gültig.',
+          'Die Codes gelten 10 Minuten.',
           style: TextStyle(fontSize: 12, color: muted),
         ),
         const SizedBox(height: 16),
