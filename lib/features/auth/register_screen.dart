@@ -18,7 +18,9 @@ enum _Step { details, password, code, success }
 //   Passwort → nur lokal
 //   Code     → POST /users/register       (legt den Benutzer an)
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String initialEmail; // z. B. aus "Passwort vergessen" übernommen
+
+  const RegisterScreen({super.key, this.initialEmail = ''});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -30,7 +32,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _errorMessage;
 
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  late final _emailController = TextEditingController(
+    text: widget.initialEmail,
+  );
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();

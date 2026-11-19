@@ -8,6 +8,7 @@ import '../../core/widgets/error_text.dart';
 import '../../core/widgets/password_step.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/success_screen.dart';
+import 'register_screen.dart';
 
 enum _Step { email, password, code, success }
 
@@ -29,6 +30,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   _Step _step = _Step.email;
   bool _isLoading = false;
   String? _errorMessage;
+  // Zur E-Mail gibt es kein Konto (Backend 404) → Hinweis auf Registrierung.
+  bool _noAccount = false;
 
   late final _emailController = TextEditingController(
     text: widget.initialEmail,
@@ -60,6 +63,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _noAccount = false;
     });
     try {
       await ApiClient.postJson(path, body: body);
@@ -71,10 +75,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = e.message;
+        if (next == _Step.password && e.statusCode == 404) {
+          _noAccount = true;
+        } else {
+          _errorMessage = e.message;
+        }
         _isLoading = false;
       });
     }
+  }
+
+  void _toRegister() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) =>
+            RegisterScreen(initialEmail: _emailController.text.trim()),
+      ),
+    );
   }
 
   // Legt noch nichts fest: verschickt nur den Code per E-Mail.
@@ -109,7 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Geben Sie Ihre E-Mail-Adresse ein. Wir schicken Ihnen einen Code zum Zurücksetzen Ihres Passworts.',
+              'Geben Sie Ihre E-Mail-Adresse ein. Wir senden Ihnen einen Code. Mit diesem Code können Sie ein neues Passwort festlegen.',
               style: TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 24),
@@ -117,13 +134,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               controller: _emailController,
               label: 'E-Mail',
               keyboardType: TextInputType.emailAddress,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _noAccount = false),
             ),
+            // Kein Konto zu dieser E-Mail: Hinweis, "Weiter" führt zur Registrierung.
+            if (_noAccount)
+              Card(
+                margin: const EdgeInsets.only(top: 4, bottom: 8),
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Mit dieser E-Mail-Adresse gibt es kein Konto.',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(height: 4),
+                      Text('Klicken Sie auf Weiter.'),
+                      Text('Dann können Sie ein neues Konto anlegen.'),
+                    ],
+                  ),
+                ),
+              ),
             const SizedBox(height: 12),
             PrimaryButton(
               label: 'Weiter',
               isLoading: _isLoading,
-              onPressed: _canSubmitEmail ? _submitEmail : null,
+              onPressed: _canSubmitEmail
+                  ? (_noAccount ? _toRegister : _submitEmail)
+                  : null,
             ),
             ErrorText(message: _errorMessage),
           ],
