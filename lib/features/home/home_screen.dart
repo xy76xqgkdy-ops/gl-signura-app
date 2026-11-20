@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 if (ofDay.isEmpty && _errorMessage == null && !_isLoading)
-                  _EmptyDay(onNew: _newRequest)
+                  const _EmptyDay()
                 else
                   DayListCard(
                     isLoading: false,
@@ -271,11 +271,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Leerer Tag: Hinweis und Button "Neue Anfrage" in der Mitte.
+// Leerer Tag: nur ein Hinweis; neue Anfrage über "+" neben dem Datum.
 class _EmptyDay extends StatelessWidget {
-  final VoidCallback onNew;
-
-  const _EmptyDay({required this.onNew});
+  const _EmptyDay();
 
   @override
   Widget build(BuildContext context) {
@@ -290,12 +288,6 @@ class _EmptyDay extends StatelessWidget {
             'An diesem Tag haben Sie keine Anfragen.',
             textAlign: TextAlign.center,
             style: TextStyle(color: muted),
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onNew,
-            icon: const Icon(Icons.add),
-            label: const Text('Neue Anfrage'),
           ),
         ],
       ),

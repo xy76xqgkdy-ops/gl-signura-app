@@ -5,7 +5,6 @@ import '../../core/utils/date_utils.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/error_text.dart';
 import '../../core/widgets/primary_button.dart';
-import '../location/location_form_screen.dart';
 import 'request_data.dart';
 import 'status_chip.dart';
 
@@ -68,8 +67,8 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   late String? _locationId = _existing?.locationId; // nur Herkunft
 
   List<LocationData> _locations = [];
-  bool _loadingLocations = true;
-  int _pickerReset = 0; // setzt die Übernehmen-Auswahl nach Gebrauch zurück
+  // Fokus des Namensfelds (für die Vorschläge aus "Meine Orte").
+  final _locNameFocus = FocusNode();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -184,6 +183,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
     ]) {
       c.dispose();
     }
+    _locNameFocus.dispose();
     super.dispose();
   }
 
@@ -197,7 +197,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       _locEmail.text = l.email;
       _locPhone.text = l.phone;
       _locationId = l.id;
-      _pickerReset++;
     });
   }
 
@@ -205,30 +204,20 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
     try {
       final list = await ApiClient.getJsonList('/me/locations');
       if (!mounted) return;
-      setState(() {
-        _locations = list.map(LocationData.fromJson).toList();
-        _loadingLocations = false;
-      });
+      setState(() => _locations = list.map(LocationData.fromJson).toList());
     } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.message;
-        _loadingLocations = false;
-      });
+      if (mounted) setState(() => _errorMessage = e.message);
     }
   }
 
-  Future<void> _newLocation() async {
-    final created = await Navigator.of(context).push<LocationData>(
-      MaterialPageRoute(builder: (_) => const LocationFormScreen()),
+  // Vorschläge aus "Meine Orte" passend zum eingetippten Namen (auch Straße
+  // oder Ort). Leeres Feld: alle Orte.
+  Iterable<LocationData> _locationOptions(TextEditingValue value) {
+    final q = value.text.trim().toLowerCase();
+    if (q.isEmpty) return _locations;
+    return _locations.where(
+      (l) => '${l.name} ${l.address}'.toLowerCase().contains(q),
     );
-    if (!mounted) return;
-    if (created == null) {
-      setState(() => _pickerReset++); // Auswahl zurücksetzen
-      return;
-    }
-    _locations = [..._locations, created];
-    _applyLocation(created);
   }
 
   DateTime _at(TimeOfDay t) =>
@@ -586,60 +575,70 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              // Gespeicherten Einsatzort suchen und übernehmen (auch bei
-              // "per Video"), "+" legt einen neuen an. Stil wie "Anlass".
+              // Name des Orts mit Suche: Tippen zeigt passende Orte aus
+              // "Meine Orte", Antippen übernimmt die Adresse. Ein neuer Ort
+              // landet beim Speichern der Anfrage automatisch in "Meine Orte"
+              // (macht das Backend, wenn Name, Straße, PLZ und Ort neu sind).
               if (_editable)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _loadingLocations
-                            ? const Center(child: CircularProgressIndicator())
-                            : DropdownMenu<String>(
-                                key: ValueKey('picker_$_pickerReset'),
-                                expandedInsets: EdgeInsets.zero,
-                                enableFilter: true,
-                                requestFocusOnTap: true,
-                                label: const Text('Ort'),
-                                hintText: 'Ort suchen',
-                                // Suchsymbol statt Pfeil, offen wie geschlossen.
-                                trailingIcon: const Icon(Icons.search),
-                                selectedTrailingIcon: const Icon(Icons.search),
-                                menuHeight: 300,
-                                inputDecorationTheme: _fieldTheme(context),
-                                dropdownMenuEntries: [
-                                  for (final l in _locations)
-                                    DropdownMenuEntry(
-                                      value: l.id,
-                                      label: '${l.name} – ${l.address}',
-                                    ),
-                                ],
-                                onSelected: (id) {
-                                  if (id == null) return;
-                                  _applyLocation(
-                                    _locations.firstWhere((l) => l.id == id),
-                                  );
-                                },
+                  child: LayoutBuilder(
+                    builder: (context, constraints) =>
+                        RawAutocomplete<LocationData>(
+                          textEditingController: _locName,
+                          focusNode: _locNameFocus,
+                          optionsBuilder: _locationOptions,
+                          displayStringForOption: (l) => l.name,
+                          onSelected: _applyLocation,
+                          fieldViewBuilder: (context, controller, focus, _) =>
+                              TextField(
+                                controller: controller,
+                                focusNode: focus,
+                                onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  labelText: _remote
+                                      ? 'Name (z. B. Gesprächspartner)'
+                                      : 'Name des Orts (z. B. Praxis Dr. Müller)',
+                                  hintText: 'Name eingeben oder suchen',
+                                  suffixIcon: const Icon(Icons.search),
+                                ).applyDefaults(_fieldTheme(context)),
                               ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filledTonal(
-                        tooltip: 'Neuer Ort',
-                        icon: const Icon(Icons.add),
-                        onPressed: _isLoading ? null : _newLocation,
-                      ),
-                    ],
+                          optionsViewBuilder: (context, onSelected, options) =>
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 4,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxHeight: 280,
+                                      maxWidth: constraints.maxWidth,
+                                    ),
+                                    child: ListView(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      children: [
+                                        for (final l in options)
+                                          ListTile(
+                                            leading: const Icon(Icons.place),
+                                            title: Text(l.name),
+                                            subtitle: Text(l.address),
+                                            onTap: () => onSelected(l),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        ),
                   ),
+                )
+              else
+                AppTextField(
+                  controller: _locName,
+                  label: _remote ? 'Name' : 'Name des Orts',
+                  readOnly: true,
                 ),
-              AppTextField(
-                controller: _locName,
-                label: _remote
-                    ? 'Name (z. B. Gesprächspartner)'
-                    : 'Name (z. B. Praxis Dr. Müller)',
-                readOnly: !_editable,
-                onChanged: (_) => setState(() {}),
-              ),
               // Adresse und Kontakt: bei "per Video" ausgeblendet, aber
               // aus dem gewählten Einsatzort trotzdem mitgespeichert.
               if (!_remote) ...[
