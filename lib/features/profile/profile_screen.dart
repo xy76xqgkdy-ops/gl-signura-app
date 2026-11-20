@@ -32,7 +32,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final _mobile = TextEditingController(text: _s('mobile'));
   final _emailCode = TextEditingController();
   final _mobileCode = TextEditingController();
-  late String _language = _s('language').isEmpty ? 'de_DE' : _s('language');
+  // Gespeicherte Sprache, wenn es sie (noch) gibt, sonst Deutsch.
+  late String _language = _appLanguages.any((l) => l.value == _s('language'))
+      ? _s('language')
+      : 'de_DE';
   // Sprache für die Übersetzung: genau eine (Pflicht, Standard DGS).
   late String _translation =
       (_user['translation_languages'] as List? ?? [])
@@ -50,10 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Sprache der App (Anzeige, E-Mails).
+  // Sprache der App (Anzeige, E-Mails). Zurzeit nur Deutsch, Englisch kommt später:
+  // (value: 'en_US', name: 'English', flag: '🇬🇧'),
   static const List<FlagItem> _appLanguages = [
     (value: 'de_DE', name: 'Deutsch', flag: '🇩🇪'),
-    (value: 'en_US', name: 'English', flag: '🇬🇧'),
   ];
 
   String _s(String key) => _user[key] as String? ?? '';
@@ -196,12 +199,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _form(BuildContext context) {
     void changed(String _) => setState(() {});
-    // Unbekannte, gespeicherte Sprache der App (z. B. aus der alten App) zeigen.
-    final appLanguages = [
-      ..._appLanguages,
-      if (!_appLanguages.any((l) => l.value == _language))
-        (value: _language, name: _language, flag: '🏳️'),
-    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -240,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Sprache der App: genau eine; Antippen setzt das Häkchen um.
         FlagCheckList(
           label: 'Sprache der App',
-          items: appLanguages,
+          items: _appLanguages,
           selected: [_language],
           onChanged: (value, _) => setState(() => _language = value),
         ),
