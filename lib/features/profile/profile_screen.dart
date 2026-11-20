@@ -33,9 +33,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _emailCode = TextEditingController();
   final _mobileCode = TextEditingController();
   late String _language = _s('language').isEmpty ? 'de_DE' : _s('language');
-  late final List<String> _translation = [
-    ...(_user['translation_languages'] as List? ?? []).whereType<String>(),
-  ];
+  // Sprache für die Übersetzung: genau eine (Pflicht, Standard DGS).
+  late String _translation =
+      (_user['translation_languages'] as List? ?? [])
+          .whereType<String>()
+          .firstOrNull ??
+      'dgs';
 
   List<({String code, String name, String flag})> _allLanguages = [];
 
@@ -94,9 +97,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() => _errorMessage = e.message);
     }
   }
-
-  void _toggleLanguage(String code, bool on) =>
-      setState(() => on ? _translation.add(code) : _translation.remove(code));
 
   // Wie das Backend: +49… ohne Leerzeichen, damit "0170 1" = "+491701" ist.
   static String _normMobile(String m) {
@@ -173,10 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'email': _email.text.trim(),
         'mobile': _mobile.text.trim(),
         'language': _language,
-        // Nur Sprachen, die das Backend noch anbietet (abgeschaltete fallen weg).
-        'translation_languages': _translation
-            .where((c) => _allLanguages.any((l) => l.code == c))
-            .toList(),
+        'translation_languages': [_translation],
         if (_emailCodeSent) 'email_code': _emailCode.text.trim(),
         if (_mobileCodeSent) 'mobile_code': _mobileCode.text.trim(),
       },
@@ -248,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onChanged: (value, _) => setState(() => _language = value),
         ),
         const SizedBox(height: 16),
-        // Sprachen für die Übersetzung: mehrere, gewählte stehen oben.
+        // Sprache für die Übersetzung: genau eine; Antippen setzt das Häkchen um.
         if (_allLanguages.isEmpty)
           const Center(child: CircularProgressIndicator())
         else
@@ -258,8 +255,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               for (final l in _allLanguages)
                 (value: l.code, name: l.name, flag: l.flag),
             ],
-            selected: _translation,
-            onChanged: _toggleLanguage,
+            selected: [_translation],
+            onChanged: (value, _) => setState(() => _translation = value),
           ),
         const SizedBox(height: 16),
         PrimaryButton(
