@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
 import '../../core/session/session_store.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/avatars.dart';
 import '../../core/widgets/day_list_card.dart';
 import '../../core/widgets/month_calendar.dart';
 import '../auth/login_screen.dart';
@@ -382,15 +383,10 @@ class _RequestTile extends StatelessWidget {
   }
 
   Widget _avatar(BuildContext context) {
-    final picture = request.interpreterPicture;
     final color = request.status.color;
-    if (picture != null) {
-      return CircleAvatar(
-        radius: 24,
-        backgroundImage: NetworkImage(picture),
-        onBackgroundImageError: (_, _) {}, // Bild fehlt → Hintergrundfarbe
-        backgroundColor: color.withValues(alpha: 0.15),
-      );
+    // Gebucht mit Bild: Profilbilder der Dolmetscher:innen, sonst Symbol.
+    if (request.interpreterPictures.isNotEmpty) {
+      return AvatarStack(pictures: request.interpreterPictures);
     }
     return CircleAvatar(
       radius: 24,

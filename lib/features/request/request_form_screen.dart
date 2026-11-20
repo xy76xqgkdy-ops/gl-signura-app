@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/avatars.dart';
 import '../../core/widgets/error_text.dart';
 import '../../core/widgets/primary_button.dart';
 import 'request_data.dart';
@@ -368,6 +369,17 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   }
 
   // Zusagen: offen → ankreuzen; beauftragt → mit Haken; nur Namen.
+  // Profilbild der Dolmetscher:in, ohne Bild ein graues Symbol in gleicher Größe.
+  Widget _offerPicture(BuildContext context, OfferData o) {
+    final picture = o.picture;
+    if (picture != null) return Avatar(bytes: picture, size: 48);
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Icon(Icons.person),
+    );
+  }
+
   Widget _offersSection(BuildContext context) {
     final shown = _isOpen
         ? _openOffers
@@ -398,17 +410,16 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                                     ? _chosen.add(o.id)
                                     : _chosen.remove(o.id),
                               ),
-                        secondary: const Icon(Icons.record_voice_over_outlined),
+                        secondary: _offerPicture(context, o),
                         title: Text(o.interpreterName),
-                        dense: true,
                       )
                     : ListTile(
-                        leading: const Icon(
+                        leading: _offerPicture(context, o),
+                        title: Text(o.interpreterName),
+                        trailing: const Icon(
                           Icons.check_circle,
                           color: Colors.green,
                         ),
-                        title: Text(o.interpreterName),
-                        dense: true,
                       ),
             ],
           ),

@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../core/utils/date_utils.dart';
+import '../../core/widgets/avatars.dart';
 
 // Status einer Anfrage, wie im Backend (request.status).
 enum RequestStatus {
@@ -35,9 +38,10 @@ class RequestData {
   final String locationCity;
   final String locationEmail;
   final String locationPhone;
-  // Zugeteilter Dolmetscher; liefert das Backend noch nicht (dann null).
+  // Gebuchte Dolmetscher:innen (Namen mit Komma) und ihre Profilbilder
+  // (höchstens 3, leer ohne Bild).
   final String? interpreterName;
-  final String? interpreterPicture; // Bild-URL
+  final List<Uint8List> interpreterPictures;
   final int offerCount; // offene Zusagen von Dolmetscher:innen
   final RequestStatus status;
 
@@ -55,7 +59,7 @@ class RequestData {
     this.locationEmail = '',
     this.locationPhone = '',
     this.interpreterName,
-    this.interpreterPicture,
+    this.interpreterPictures = const [],
     this.offerCount = 0,
     required this.status,
   });
@@ -74,7 +78,10 @@ class RequestData {
     locationEmail: json['location_email'] as String? ?? '',
     locationPhone: json['location_phone'] as String? ?? '',
     interpreterName: _nonEmpty(json['interpreter_name']),
-    interpreterPicture: _nonEmpty(json['interpreter_picture']),
+    interpreterPictures: [
+      for (final p in json['interpreter_pictures'] as List? ?? const [])
+        ?pictureBytes(p),
+    ],
     offerCount: (json['offer_count'] as num?)?.toInt() ?? 0,
     status: RequestStatus.parse(json['status'] as String?),
   );
@@ -95,21 +102,25 @@ class RequestData {
         ].where((s) => s.isNotEmpty).join(', ');
 }
 
-// Zusage einer Dolmetscher:in (GET /me/requests/{id}/offers), ohne Vermittler.
+// Zusage einer Dolmetscher:in (GET /me/requests/{id}/offers) mit
+// Profilbild, ohne Vermittler.
 class OfferData {
   final String id;
   final String interpreterName;
+  final Uint8List? picture; // null ohne Bild
   final String status; // offered, awarded, declined
 
   const OfferData({
     required this.id,
     required this.interpreterName,
+    this.picture,
     required this.status,
   });
 
   factory OfferData.fromJson(Map<String, dynamic> json) => OfferData(
     id: json['offer_id'] as String? ?? '',
     interpreterName: json['interpreter_name'] as String? ?? '',
+    picture: pictureBytes(json['picture']),
     status: json['status'] as String? ?? '',
   );
 }
