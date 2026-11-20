@@ -322,14 +322,11 @@ class _RequestTile extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurfaceVariant;
     final cancelled = request.status == RequestStatus.cancelled;
-    // Beauftragt: Namen; offen: Zahl der Zusagen und Bedarf.
+    // Gebucht: Namen; offen: Zahl der Zusagen.
     final interpreter = (request.interpreterName ?? '').isNotEmpty
         ? request.interpreterName!
         : request.status == RequestStatus.newRequest && request.offerCount > 0
         ? '${request.offerCount} ${request.offerCount == 1 ? 'Zusage' : 'Zusagen'}'
-              ' · Sie brauchen ${request.interpretersNeeded}'
-        : request.interpretersNeeded > 1
-        ? 'noch keine Zusage · Sie brauchen ${request.interpretersNeeded}'
         : _noInterpreter;
     final place = request.locationName.isNotEmpty
         ? request.locationName

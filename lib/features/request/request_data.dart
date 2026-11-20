@@ -38,7 +38,6 @@ class RequestData {
   // Zugeteilter Dolmetscher; liefert das Backend noch nicht (dann null).
   final String? interpreterName;
   final String? interpreterPicture; // Bild-URL
-  final int interpretersNeeded; // so viele Dolmetscher:innen werden gebraucht
   final int offerCount; // offene Zusagen von Dolmetscher:innen
   final RequestStatus status;
 
@@ -57,7 +56,6 @@ class RequestData {
     this.locationPhone = '',
     this.interpreterName,
     this.interpreterPicture,
-    this.interpretersNeeded = 1,
     this.offerCount = 0,
     required this.status,
   });
@@ -77,7 +75,6 @@ class RequestData {
     locationPhone: json['location_phone'] as String? ?? '',
     interpreterName: _nonEmpty(json['interpreter_name']),
     interpreterPicture: _nonEmpty(json['interpreter_picture']),
-    interpretersNeeded: (json['interpreters_needed'] as num?)?.toInt() ?? 1,
     offerCount: (json['offer_count'] as num?)?.toInt() ?? 0,
     status: RequestStatus.parse(json['status'] as String?),
   );

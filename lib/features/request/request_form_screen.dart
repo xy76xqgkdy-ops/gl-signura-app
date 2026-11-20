@@ -74,9 +74,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Wie viele Dolmetscher:innen gebraucht werden (1–20).
-  late int _needed = _existing?.interpretersNeeded ?? 1;
-
   // Zusagen von Dolmetscher:innen (nur Namen, keine Vermittler) und die
   // zum Beauftragen angekreuzten.
   List<OfferData> _offers = [];
@@ -130,9 +127,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       for (final o in _openOffers)
         if (_chosen.contains(o.id)) o.interpreterName,
     ].join(', ');
-    final shortage = n < _needed
-        ? '\n\nSie brauchen $_needed, haben aber nur $n ausgewählt.'
-        : '';
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -140,7 +134,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
           n == 1 ? '1 Dolmetscher buchen?' : '$n Dolmetscher buchen?',
         ),
         content: Text(
-          '$names$shortage\n\nDie anderen bekommen eine Absage. '
+          '$names\n\nDie anderen bekommen eine Absage. '
           'Sie können das nicht rückgängig machen.',
         ),
         actions: [
@@ -303,7 +297,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       'location_city': _locCity.text.trim(),
       'location_email': _locEmail.text.trim(),
       'location_phone': _locPhone.text.trim(),
-      'interpreters_needed': _needed,
     };
     try {
       if (_existing == null) {
@@ -387,7 +380,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
 
   // Zusagen: offen → ankreuzen; beauftragt → mit Haken; nur Namen.
   Widget _offersSection(BuildContext context) {
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final shown = _isOpen
         ? _openOffers
         : _offers.where((o) => o.status == 'awarded').toList();
@@ -396,7 +388,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
       children: [
         Text(
           _isOpen
-              ? 'Zusagen: ${_chosen.length} von $_needed ausgewählt'
+              ? 'Zusagen: ${_chosen.length} ausgewählt'
               : 'Gebuchte Dolmetscher',
           style: Theme.of(context).textTheme.titleSmall,
         ),
@@ -432,14 +424,6 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
             ],
           ),
         ),
-        if (_isOpen && _chosen.length > _needed)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'Sie haben mehr ausgewählt, als Sie brauchen ($_needed).',
-              style: TextStyle(fontSize: 12, color: muted),
-            ),
-          ),
       ],
     );
   }
@@ -601,40 +585,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                   ),
                 ],
               ),
-              // Wie viele Dolmetscher:innen gebraucht werden.
-              Row(
-                children: [
-                  const Icon(Icons.groups_outlined),
-                  const SizedBox(width: 12),
-                  const Expanded(child: Text('Wie viele Dolmetscher?')),
-                  IconButton.outlined(
-                    tooltip: 'weniger',
-                    icon: const Icon(Icons.remove),
-                    onPressed: _editable && _needed > 1
-                        ? () => setState(() => _needed--)
-                        : null,
-                  ),
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      '$_needed',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  IconButton.outlined(
-                    tooltip: 'mehr',
-                    icon: const Icon(Icons.add),
-                    onPressed: _editable && _needed < 20
-                        ? () => setState(() => _needed++)
-                        : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
               // Gespeicherten Einsatzort suchen und übernehmen (auch bei
               // "per Video"), "+" legt einen neuen an. Stil wie "Anlass".
               if (_editable)
