@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/utils/date_utils.dart';
+import '../../core/utils/maps.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/avatars.dart';
 import '../../core/widgets/error_text.dart';
@@ -369,6 +370,10 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
   }
 
   // Zusagen: offen → ankreuzen; beauftragt → mit Haken; nur Namen.
+  // Route nur mit ganzer Adresse (Straße, PLZ, Ort).
+  bool get _canRoute =>
+      [_locStreet, _locPostal, _locCity].every((c) => c.text.trim().isNotEmpty);
+
   // Profilbild der Dolmetscher:in, ohne Bild ein graues Symbol in gleicher Größe.
   Widget _offerPicture(BuildContext context, OfferData o) {
     final picture = o.picture;
@@ -682,6 +687,20 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                     ),
                   ],
                 ),
+                // Route: erst wenn die ganze Adresse da ist; öffnet die
+                // Standard-Karten-App.
+                if (_canRoute)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => openRoute(
+                        '${_locStreet.text.trim()}, '
+                        '${_locPostal.text.trim()} ${_locCity.text.trim()}',
+                      ),
+                      icon: const Icon(Icons.directions),
+                      label: const Text('Route in Karten öffnen'),
+                    ),
+                  ),
                 Row(
                   children: [
                     Expanded(
