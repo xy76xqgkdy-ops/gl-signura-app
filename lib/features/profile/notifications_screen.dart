@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/push/push.dart';
 import '../../core/widgets/error_text.dart';
 import '../../core/widgets/primary_button.dart';
 
-// Benachrichtigungen: auf welchem Weg man informiert werden möchte
-// (PUT /me: notify_email, notify_sms, notify_messenger). Gespeichert wird
-// vorerst nur die Wahl; der Versand kommt später.
-// Gibt das gespeicherte Profil per pop zurück.
+// Benachrichtigungen: Push-Mitteilungen ein/aus (PUT /me notify_push).
+// Eingeschaltet meldet sich dieser Browser beim Backend an (Web-Push,
+// POST /me/push-tokens). Gibt das gespeicherte Profil per pop zurück.
 class NotificationsScreen extends StatefulWidget {
   final Map<String, dynamic> user;
 
@@ -18,35 +18,60 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  late bool _email = widget.user['notify_email'] as bool? ?? true;
-  late bool _sms = widget.user['notify_sms'] as bool? ?? false;
-  late bool _messenger = widget.user['notify_messenger'] as bool? ?? false;
+  late bool _push = widget.user['notify_push'] as bool? ?? true;
   bool _isLoading = false;
+  bool _denied = false;
   String? _errorMessage;
 
-  bool get _hasMobile =>
-      (widget.user['mobile'] as String? ?? '').trim().isNotEmpty;
+  @override
+  void initState() {
+    super.initState();
+    Push.loadKey(); // vorab, siehe Push.loadKey
+  }
 
   Future<void> _save() async {
+    // Zuerst (ohne vorheriges Warten) nach der Erlaubnis fragen: Safari
+    // erlaubt das nur direkt nach dem Antippen.
+    final permission = _push ? Push.enable() : null;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _denied = false;
     });
     try {
-      final user = await ApiClient.putJson(
-        '/me',
-        body: {
-          'notify_email': _email,
-          'notify_sms': _sms,
-          'notify_messenger': _messenger,
-        },
-      );
+      if (permission != null) {
+        final res = await permission;
+        if (res != 'ok') {
+          if (!mounted) return;
+          setState(() {
+            _isLoading = false;
+            if (res == 'denied') {
+              _denied = true;
+            } else {
+              _errorMessage =
+                  'Dieser Browser kann keine Push-Mitteilungen. Auf dem iPhone: '
+                  'Seite zuerst mit „Teilen“ → „Zum Home-Bildschirm“ hinzufügen '
+                  'und von dort öffnen.';
+            }
+          });
+          return;
+        }
+      } else {
+        await Push.disable();
+      }
+      final user = await ApiClient.putJson('/me', body: {'notify_push': _push});
       if (!mounted) return;
       Navigator.of(context).pop(user);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
         _errorMessage = e.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Push-Mitteilungen konnten nicht eingeschaltet werden.';
         _isLoading = false;
       });
     }
@@ -62,34 +87,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: const EdgeInsets.all(12),
           children: [
             const Text(
-              'Wie sollen wir Ihnen Nachrichten schicken?',
+              'Wir schicken Ihnen eine Mitteilung, wenn sich bei Ihren Anfragen '
+              'etwas ändert. Zum Beispiel bei einer neuen Zusage.',
               style: TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 8),
             SwitchListTile(
-              secondary: const Icon(Icons.email_outlined),
-              title: const Text('per E-Mail'),
-              value: _email,
-              onChanged: (v) => setState(() => _email = v),
+              secondary: const Icon(Icons.notifications_none),
+              title: const Text('Push-Mitteilungen'),
+              value: _push,
+              onChanged: (v) => setState(() => _push = v),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.sms_outlined),
-              title: const Text('per SMS'),
-              value: _sms,
-              onChanged: (v) => setState(() => _sms = v),
-            ),
-            SwitchListTile(
-              secondary: const Icon(Icons.chat_outlined),
-              title: const Text('per Messenger'),
-              value: _messenger,
-              onChanged: (v) => setState(() => _messenger = v),
-            ),
-            if ((_sms || _messenger) && !_hasMobile)
+            if (_denied)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Text(
-                  'Für SMS und Messenger brauchen wir Ihre Handynummer. '
-                  'Sie tragen sie bei „Meine Daten“ ein.',
+                  'Mitteilungen sind für diese Seite ausgeschaltet. Bitte erlauben '
+                  'Sie sie in den Einstellungen des Browsers.',
                   style: TextStyle(fontSize: 12, color: muted),
                 ),
               ),

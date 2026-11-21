@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/push/push.dart';
 import '../../core/session/session_store.dart';
 import '../../core/utils/date_utils.dart';
 import '../../core/widgets/avatars.dart';
@@ -48,6 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Web-Push: Browser beim Backend anmelden (ohne zu fragen, nur wenn erlaubt).
+    Push.sync(_user['notify_push'] as bool? ?? true);
     _load();
   }
 
